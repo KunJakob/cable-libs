@@ -15,7 +15,7 @@ import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 )
 public class CableLibs {
 
-    public static final String MOD_ID = "library";
+    public static final String MOD_ID = "cable-libs";
     public static final String MOD_NAME = "CableLibs";
     public static final String VERSION = "1.0";
 
