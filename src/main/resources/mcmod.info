@@ -1,0 +1,16 @@
+[
+    {
+        "modid": "library",
+        "name": "CableLibs",
+        "description": "Library for Cable",
+        "version": "${version}",
+        "mcversion": "${mcversion}",
+        "url": "",
+        "updateUrl": "",
+        "authorList": ["CraftSteamG", "Hiroku", "Landon"],
+        "credits": "",
+        "logoFile": "",
+        "screenshots": [],
+        "dependencies": []
+    }
+]
