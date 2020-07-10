@@ -7,6 +7,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
+import java.util.logging.Logger;
+
 @Mod(
         modid = CableLibs.MOD_ID,
         name = CableLibs.MOD_NAME,
@@ -23,9 +25,14 @@ public class CableLibs {
     @Mod.Instance(MOD_ID)
     public static CableLibs INSTANCE;
 
+    private Logger logger = Logger.getLogger("Cable-Libs");
+
     @Mod.EventHandler
     public void onServerStarting(FMLServerStartingEvent event) {
         event.registerServerCommand(new ClickTextCommand());
     }
 
+    public Logger getLogger() {
+        return logger;
+    }
 }
