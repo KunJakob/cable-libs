@@ -24,11 +24,6 @@ public class CableLibs {
     public static CableLibs INSTANCE;
 
     @Mod.EventHandler
-    public void preinit(FMLPreInitializationEvent event) {
-        MinecraftForge.EVENT_BUS.register(TaskTickListener.class);
-    }
-
-    @Mod.EventHandler
     public void onServerStarting(FMLServerStartingEvent event) {
         event.registerServerCommand(new ClickTextCommand());
     }
