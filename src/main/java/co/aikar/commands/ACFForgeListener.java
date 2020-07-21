@@ -38,7 +38,7 @@ public class ACFForgeListener {
 
     static {
         try {
-            langField = EntityPlayerMP.class.getDeclaredField("language");
+            langField = EntityPlayerMP.class.getDeclaredField("field_71148_cg");
             langField.setAccessible(true);
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
