@@ -113,6 +113,7 @@ fun String.white() = TextComponentString(this).also { it.style.color = TextForma
 fun String.text() = TextComponentString(this)
 fun String.stripCodes(): String = Text.resolveComponent(this).unformattedText
 
+fun ITextComponent.onClick(action: (p: EntityPlayerMP) -> Unit): ITextComponent = onClick(Consumer { action.invoke(it) })
 fun ITextComponent.onClick(action: Consumer<EntityPlayerMP>) = also { it.style.clickEvent = click(action) }
 fun ITextComponent.onHover(text: String) = also { it.style.hoverEvent = hover(text) }
 fun ITextComponent.underline() = also { it.style.underlined = true }
@@ -120,7 +121,9 @@ fun ITextComponent.bold() = also { it.style.bold = true }
 fun ITextComponent.italicise() = also { it.style.italic = true }
 fun ITextComponent.strikethrough() = also { it.style.strikethrough = true }
 fun ITextComponent.obfuscate() = also { it.style.obfuscated = true }
-fun ITextComponent.unaryPlus(vararg params: Any) = of(this, *params)
+
+public fun ITextComponent.add(other: ITextComponent): ITextComponent = this.appendSibling(other)
+public fun ITextComponent.add(string: String): ITextComponent = this.appendSibling(of(string))
 
 fun Style.assimilate(other: Style): Style {
     hoverEvent = hoverEvent ?: other.hoverEvent
