@@ -1,5 +1,6 @@
 package co.aikar.commands;
 
+import com.cable.library.player.PlayerKt;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraftforge.fml.common.FMLCommonHandler;
@@ -55,7 +56,7 @@ public class ACFForgeUtil {
         //noinspection Duplicates
         while (iter.hasNext()) {
             EntityPlayerMP player = iter.next();
-            if (requester instanceof EntityPlayerMP && ((EntityPlayerMP) requester).isInvisibleToPlayer(player)) {
+            if (requester instanceof EntityPlayerMP && PlayerKt.isInvisibleTo((EntityPlayerMP) requester, player)) {
                 if (requester.canUseCommand(4, "acf.seevanish")) {
                     if (!search.endsWith(":confirm")) {
                         confirmList.add(player);

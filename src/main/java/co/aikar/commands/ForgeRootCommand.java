@@ -23,6 +23,7 @@
 
 package co.aikar.commands;
 
+import com.cable.library.CableLibs;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import net.minecraft.command.CommandBase;
@@ -99,6 +100,7 @@ public class ForgeRootCommand extends CommandBase implements RootCommand {
     @Override
     public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
         execute(manager.getCommandIssuer(sender), getCommandName(), args);
+        CableLibs.INSTANCE.getLogger().info(sender.getName() + " issued a command: /" + this.name + " " + String.join(" ", args));
     }
 
 }

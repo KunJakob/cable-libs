@@ -99,6 +99,7 @@ public class ForgeCommandManager extends CommandManager<
         if (this.locales == null) {
             this.locales = new ForgeLocales(this);
             this.locales.loadLanguages();
+            this.locales.loadMissingBundles();
         }
         return locales;
     }

@@ -18,5 +18,6 @@ public class ForgeLocales extends Locales {
         super.loadLanguages();
         String pluginName = "acf-" + CableLibs.MOD_ID;
         addMessageBundles("acf-minecraft", pluginName, pluginName.toLowerCase(Locale.ENGLISH));
+
     }
 }

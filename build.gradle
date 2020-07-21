@@ -57,6 +57,7 @@ repositories {
     }
     maven { url = "https://repo.aikar.co/content/groups/aikar/" }
     maven { url = "https://hub.spigotmc.org/nexus/content/groups/public/" }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -68,6 +69,9 @@ dependencies {
     compile group: "org.jetbrains.kotlinx", name: "kotlinx-coroutines-core", version: coroutines_version
     compile group: "org.jetbrains.kotlinx", name: "kotlinx-coroutines-jdk8", version: coroutines_version
     compile "co.aikar:acf-core:0.5.0-SNAPSHOT"
+    compile 'com.google.inject:guice:4.1.0'
+    compile 'com.google.inject.extensions:guice-assistedinject:4.1.0'
+    compile 'com.google.guava:guava:21.0'
 }
 
 shadowJar {
@@ -85,10 +89,23 @@ shadowJar {
         include dependency("co.aikar:Table:1.0.0-SNAPSHOT")
         include dependency("co.aikar:DelegatingMap:1.0.0-SNAPSHOT")
         include dependency("co.aikar:minecraft-timings:1.0.4")
+        include dependency('com.google.inject:guice:4.1.0')
+        include dependency('com.google.inject.extensions:guice-assistedinject:4.1.0')
+        include dependency('com.google.guava:guava:21.0')
+        include dependency("javax.inject:javax.inject:1")
+        include dependency("aopalliance:aopalliance:1.0")
     }
     relocate 'co.aikar.commands', 'com.cable.library.shaded.acf'
     relocate 'co.aikar.locales', 'com.cable.library.shaded.locales'
+
 }
+
+reobf {
+    shadowJar {
+        mappingType = 'SEARGE'
+    }
+}
+
 
 kotlinSourcesJar {
     from(sourceSets.main.kotlin.srcDirs)
@@ -128,6 +145,8 @@ tasks.withType(JavaCompile) { task ->
 
 tasks.build.dependsOn kotlinSourcesJar
 tasks.build.dependsOn shadowJar
+tasks.build.dependsOn reobfShadowJar
+
 
 compileJava {
     options.compilerArgs += ["-parameters"]

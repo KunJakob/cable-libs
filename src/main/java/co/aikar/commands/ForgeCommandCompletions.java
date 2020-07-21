@@ -23,10 +23,27 @@
 
 package co.aikar.commands;
 
+import com.cable.library.player.PlayerKt;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 @SuppressWarnings("WeakerAccess")
 public class ForgeCommandCompletions extends CommandCompletions<ForgeCommandCompletionContext> {
 
     public ForgeCommandCompletions(final ForgeCommandManager manager) {
         super(manager);
+
+        registerAsyncCompletion("players", c -> {
+            Stream<EntityPlayerMP> stream = FMLCommonHandler.instance().getMinecraftServerInstance()
+                    .getPlayerList().getPlayers().stream();
+            if(c.issuer.isPlayer())
+                stream = stream.filter(pl -> !PlayerKt.isInvisibleTo(c.issuer.getPlayer(), pl));
+
+            return stream.map(EntityPlayer::getName).collect(Collectors.toList());
+        });
     }
 }
