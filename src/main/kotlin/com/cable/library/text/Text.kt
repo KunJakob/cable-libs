@@ -115,7 +115,8 @@ fun String.stripCodes(): String = Text.resolveComponent(this).unformattedText
 
 fun ITextComponent.onClick(action: (p: EntityPlayerMP) -> Unit): ITextComponent = onClick(Consumer { action.invoke(it) })
 fun ITextComponent.onClick(action: Consumer<EntityPlayerMP>) = also { it.style.clickEvent = click(action) }
-fun ITextComponent.onHover(text: String) = also { it.style.hoverEvent = hover(text) }
+fun ITextComponent.onHover(string: String) = also { it.style.hoverEvent = hover(string) }
+fun ITextComponent.onHover(text: ITextComponent) = also { it.style.hoverEvent = hover(text) }
 fun ITextComponent.underline() = also { it.style.underlined = true }
 fun ITextComponent.bold() = also { it.style.bold = true }
 fun ITextComponent.italicise() = also { it.style.italic = true }
