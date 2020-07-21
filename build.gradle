@@ -18,10 +18,11 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
 
+
+apply plugin: 'maven'
+group = 'com.gitlab.cable-mc'
 apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: "kotlin"
-
-group = 'com.cable'
 version = '1.0'
 archivesBaseName = 'cable-libs'
 
