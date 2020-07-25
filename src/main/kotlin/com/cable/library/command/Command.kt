@@ -1,5 +1,6 @@
 package com.cable.library.command
 
+import com.cable.library.command.MetaDataProvider.metaDataProviders
 import com.cable.library.text.of
 import com.cable.library.text.red
 import net.minecraft.command.CommandHandler
@@ -9,20 +10,23 @@ import net.minecraft.entity.player.EntityPlayerMP
 import net.minecraft.server.MinecraftServer
 import net.minecraft.util.math.BlockPos
 import net.minecraftforge.fml.common.FMLCommonHandler
+import java.lang.IllegalStateException
 import java.util.*
 import kotlin.collections.ArrayList
 
 @Target(AnnotationTarget.CLASS)
 annotation class Command(
-        val aliases: Array<String>,
-        val node: String,
-        val neededArgs: Array<String> = [],
-        val optionalArgs: Array<String> = [],
-        val showTypes: Boolean = false,
-        val remainingLabel: String = "",
-        val isRemainingOptional: Boolean = true,
-        val playerOnly: Boolean = false,
-        val consoleOnly: Boolean = false
+    val aliases: Array<String>,
+    val node: String,
+    val neededArgs: Array<String> = [],
+    val optionalArgs: Array<String> = [],
+    val neededMetaData: Array<String> = [],
+    val optionalMetaData: Array<String> = [],
+    val showTypes: Boolean = false,
+    val remainingLabel: String = "",
+    val isRemainingOptional: Boolean = true,
+    val playerOnly: Boolean = false,
+    val consoleOnly: Boolean = false
 )
 
 interface ICommandExecutor : IAnnotatedCommandExecutor {
@@ -30,6 +34,8 @@ interface ICommandExecutor : IAnnotatedCommandExecutor {
     fun getNode(): String
     fun getNeededArgs(): Array<String>
     fun getOptionalArgs(): Array<String>
+    fun getNeededMetaData(): Array<String>
+    fun getOptionalMetaData(): Array<String>
     fun getShowTypes(): Boolean = false
     fun getRemainingLabel(): String = ""
     fun getIsRemainingOptional(): Boolean = true
@@ -41,6 +47,8 @@ interface ICommandExecutor : IAnnotatedCommandExecutor {
             getNode(),
             getNeededArgs(),
             getOptionalArgs(),
+            getNeededMetaData(),
+            getOptionalMetaData(),
             getShowTypes(),
             getRemainingLabel(),
             getIsRemainingOptional(),
@@ -75,6 +83,8 @@ interface IAnnotatedCommandExecutor {
             node: String,
             neededArgs: Array<String> = arrayOf(),
             optionalArgs: Array<String> = arrayOf(),
+            neededMetaData: Array<String> = arrayOf(),
+            optionalMetaData: Array<String> = arrayOf(),
             showTypes: Boolean = false,
             remainingLabel: String = "",
             isRemainingOptional: Boolean = true,
@@ -103,7 +113,7 @@ interface IAnnotatedCommandExecutor {
                 var usage = "/$name"
 
                 if (subcommands.isNotEmpty()) {
-                    val usable = subcommands.filter { it.checkPermission(sender.server, sender) }
+                    val usable = subcommands.filter { it.checkPermission(sender.server!!, sender) }
 
                     if (usable.isEmpty()) {
                         return " <subcommands that you don't have permission to use!>"
@@ -111,7 +121,7 @@ interface IAnnotatedCommandExecutor {
 
                     usage += " <${usable[0].name}"
                     for (subcommand in usable.subList(1, usable.size)) {
-                        if (subcommand.checkPermission(sender.server, sender)) {
+                        if (subcommand.checkPermission(sender.server!!, sender)) {
                             usage += " | ${subcommand.name}"
                         }
                     }
@@ -188,6 +198,23 @@ interface IAnnotatedCommandExecutor {
 
                 val params = Parameters(sender, given, needed, optional, remainingLabel, isRemainingOptional)
 
+                neededMetaData.forEach {
+                    val provider = metaDataProviders[it.toLowerCase()]
+                            ?: throw IllegalStateException("No meta data provider registered for ${it.toLowerCase()}")
+                    val provided = provider.provide(sender, true)
+                    if (provided == null) {
+                        return
+                    } else {
+                        params.metaData[it.toLowerCase()] = provided
+                    }
+                }
+
+                optionalMetaData.forEach {
+                    val provider = metaDataProviders[it.toLowerCase()]
+                            ?: throw IllegalStateException("No meta data provider registered for ${it.toLowerCase()}")
+                    provider.provide(sender, false)?.let { resolved -> params.metaData[it.toLowerCase()] = resolved }
+                }
+
                 if (params.didSucceed()) {
                     run(server, sender, params)
                 } else {
@@ -203,6 +230,8 @@ interface IAnnotatedCommandExecutor {
                 annotation.node,
                 annotation.neededArgs,
                 annotation.optionalArgs,
+                annotation.neededMetaData,
+                annotation.optionalMetaData,
                 annotation.showTypes,
                 annotation.remainingLabel,
                 annotation.isRemainingOptional,
@@ -213,65 +242,72 @@ interface IAnnotatedCommandExecutor {
 
 interface ICableCommand : ICommand {
     fun getNode(): String
-
     fun getSubcommands(): List<ICableCommand>
-
-    override fun checkPermission(server: MinecraftServer?, sender: ICommandSender): Boolean {
-        return sender.canUseCommand(4, getNode())
-    }
+    override fun checkPermission(server: MinecraftServer, sender: ICommandSender)= sender.canUseCommand(4, getNode())
 }
 
 class Parameters {
     private val params = hashMapOf<String, Any>()
     private var succeeded = true
+    internal val metaData = hashMapOf<String, Any>()
 
     var remaining = ""
         private set
 
-    companion object {
-        val resolvers = hashMapOf<String, (sender: ICommandSender, arg: String) -> Any?>(
-                "player" to { sender, arg ->
-                    FMLCommonHandler.instance().minecraftServerInstance.playerList.getPlayerByUsername(arg)
-                            ?: sender.sendMessage("There is no player online named $arg.".red())
+    public companion object {
+        public val resolvers: HashMap<String, ParameterResolver> = hashMapOf(
+                "player" to ParameterResolver { sender, arg, _ ->
+                    val player = FMLCommonHandler.instance().minecraftServerInstance.playerList.getPlayerByUsername(arg)
+                    if (player != null) {
+                        player
+                    } else {
+                        sender.sendMessage("There is no player online named $arg.".red())
+                        null
+                    }
                 },
-                "user" to { sender, arg ->
+                "user" to ParameterResolver { sender, arg, _ ->
                     try {
                         FMLCommonHandler.instance().minecraftServerInstance.playerProfileCache.getProfileByUUID(UUID.fromString(arg))
                                 ?: sender.sendMessage("No known user with UUID: $arg".red())
                     } catch (e: Exception) {
                         val lower = arg.toLowerCase()
                         val matched = FMLCommonHandler.instance().minecraftServerInstance.playerProfileCache
-                                .usernames.find { it.toLowerCase() == lower}
+                                .usernames.find { it.toLowerCase() == lower }
                         if (matched == null) {
                             sender.sendMessage("Invalid user: $arg".red())
+                            null
                         } else {
-                            FMLCommonHandler.instance().minecraftServerInstance.playerProfileCache.getGameProfileForUsername(lower)
+                            FMLCommonHandler.instance().minecraftServerInstance.playerProfileCache
+                                    .getGameProfileForUsername(lower)
                         }
                     }
                 },
-                "uuid" to { sender, arg ->
+                "uuid" to ParameterResolver { sender, arg, _ ->
                     try {
                         UUID.fromString(arg)
                     } catch (e: Exception) {
                         sender.sendMessage("Invalid UUID: $arg".red())
+                        null
                     }
                 },
-                "text" to { _, arg -> arg},
-                "number" to { sender, arg ->
+                "text" to ParameterResolver { _, arg, _ -> arg },
+                "number" to ParameterResolver { sender, arg, _ ->
                     try {
                         arg.toInt()
                     } catch (e: NumberFormatException) {
                         sender.sendMessage("Invalid number: $arg.".red())
+                        null
                     }
                 },
-                "decimal" to { sender, arg ->
+                "decimal" to ParameterResolver { sender, arg, _ ->
                     try {
                         arg.toDouble()
                     } catch (e: NumberFormatException) {
                         sender.sendMessage("Invalid decimal: $arg. A decimal must be a valid number".red())
+                        null
                     }
                 },
-                "price" to { sender, arg ->
+                "price" to ParameterResolver { sender, arg, _ ->
                     try {
                         val price = arg.toInt()
                         if (price < 0) {
@@ -284,29 +320,44 @@ class Parameters {
                         sender.sendMessage("Invalid price: $arg. A price must be a number.".red())
                     }
                 },
-                "yes/no" to { sender, arg ->
-                    try {
-                        java.lang.Boolean.parseBoolean(arg) == true
-                    } catch (e: Exception) {
+                "yes/no" to ParameterResolver { sender, arg, _ ->
+                    if (arg.toLowerCase() in arrayOf("yes", "yep", "yeah", "true", "affirmative")) {
+                        true
+                    } else if (arg.toLowerCase() in arrayOf("no", "nope", "nah", "false", "negative")) {
+                        false
+                    } else {
                         sender.sendMessage("Invalid yes/no: $arg.".red())
+                        null
                     }
                 },
-                "world" to { sender, arg ->
-                    FMLCommonHandler.instance().minecraftServerInstance.worlds.find { it.worldInfo.worldName == arg
-                            || it.provider.dimension.toString() == arg}
-                            ?: sender.sendMessage("Invalid world: $arg.".red())
-                }
+                "world" to ParameterResolver { sender, arg, _ ->
+                    val world = FMLCommonHandler.instance().minecraftServerInstance.worlds
+                            .find { it.worldInfo.worldName == arg || it.provider.dimension.toString() == arg }
+
+                    if (world != null) {
+                        world
+                    } else {
+                        sender.sendMessage("Invalid world: $arg.".red())
+                        null
+                    }
+                },
+                "literal" to ParameterResolver { _, arg, parameterName -> arg.equals(parameterName, ignoreCase = true) }
         )
     }
 
-    constructor(sender: ICommandSender,
-                given: ArrayList<String>,
-                needed: ArrayList<String>,
-                optional: ArrayList<String>,
-                remainingLabel: String,
-                isRemainingOptional: Boolean) {
+    fun <T> getNeededMetaData(name: String): T = metaData[name.toLowerCase()]!! as T
+    fun <T> getOptionalMetaData(name: String, orElse: T): T = metaData[name.toLowerCase()] as? T ?: orElse
 
-        var totalArgs = needed.plus(optional)
+    constructor(
+            sender: ICommandSender,
+            given: ArrayList<String>,
+            needed: ArrayList<String>,
+            optional: ArrayList<String>,
+            remainingLabel: String,
+            isRemainingOptional: Boolean
+    ) {
+
+        val totalArgs = needed.plus(optional)
         for (arg in totalArgs) {
             if (!resolvers.containsKey(arg.substringAfter("::").toLowerCase())) {
                 sender.sendMessage("Missing type resolver for: ${arg.substringAfter("::")}. This is an issue for Hiroku.".red())
@@ -317,8 +368,8 @@ class Parameters {
 
         var i = -1
         while (++i < given.size) {
-            var arg = given[i]
-            var beginning = if (arg.contains(":")) arg.split(":")[0] else ""
+            val arg = given[i]
+            val beginning = if (arg.contains(":")) arg.split(":")[0] else ""
             var remainder = if (arg.contains(":")) arg.split(":")[1] else arg
 
             if (remainder.startsWith("\"") && remainder.replace("[%\"]".toRegex(), "").length == 1) {
@@ -345,12 +396,12 @@ class Parameters {
 
         i = -1
         while (++i < given.size) {
-            var arg = given[i]
+            val arg = given[i]
             if (arg.contains(":")) {
                 try {
-                    var triedKey = arg.split(":")[0].toLowerCase()
-                    var triedValue = arg.substringAfter(":")
-                    var array = optional.plus(needed)
+                    val triedKey = arg.split(":")[0].toLowerCase()
+                    val triedValue = arg.substringAfter(":")
+                    val array = optional.plus(needed)
                     val resolvedKey = tryResolveNamed(sender, array, triedKey, triedValue)
                     if (!succeeded)
                         return
@@ -372,7 +423,8 @@ class Parameters {
                 succeeded = false
                 return
             } else {
-                var parsed = resolvers[neededArg.substringAfter("::").toLowerCase()]!!(sender, given.removeAt(0))
+                val resolver = resolvers[neededArg.substringAfter("::").toLowerCase()]!!
+                val parsed = resolver.resolve(sender, given.removeAt(0), neededArg.substringBefore("::"))
                 if (parsed == null) {
                     succeeded = false
                     return
@@ -386,7 +438,8 @@ class Parameters {
             if (given.isEmpty()) {
                 break
             } else {
-                var parsed = resolvers[optionalArg.substringAfter("::")]!!(sender, given.removeAt(0))
+                val resolver = resolvers[optionalArg.substringAfter("::")]!!
+                val parsed = resolver.resolve(sender, given.removeAt(0), optionalArg.substringBefore("::"))
                 if (parsed != null) {
                     params[optionalArg.split("::")[0].toLowerCase()] = parsed
                 }
@@ -422,10 +475,25 @@ class Parameters {
     fun didSucceed() = succeeded
 
     private fun tryResolveNamed(sender: ICommandSender, arr: List<String>, key: String, value: String): String? {
+        arr.forEach {
+            val parameterName = it.split("::")[0]
+            val parameterType = it.split("::")[1]
+            if (parameterName == key.toLowerCase()) {
+                val resolver = resolvers[parameterType]!!
+                val resolved = resolver.resolve(sender, value, parameterName)
+                if (resolved != null) {
+                    params[parameterName] = resolved
+                    return it
+                } else {
+                    succeeded = false
+                }
+            }
+        }
+
         0.until(arr.size).forEach {
             if (arr[it].split("::")[0].toLowerCase() == key.toLowerCase()) {
-                var resolver = resolvers[key.toLowerCase()]
-                var resolved = resolver!!(sender, value)
+                val resolver = resolvers[arr[it].split("::")[1]]!!
+                val resolved = resolver.resolve(sender, value, key)
                 if (resolved != null) {
                     params[key.toLowerCase()] = resolved
                     return arr[it]
