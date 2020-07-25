@@ -4,6 +4,7 @@ import com.cable.library.text.ClickTextCommand;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @Mod(
@@ -31,5 +32,17 @@ public class CableLibs {
 
     public Logger getLogger() {
         return logger;
+    }
+
+    public static void logError(String error) {
+        INSTANCE.logger.log(Level.SEVERE, error);
+    }
+
+    public static void logWarn(String warn) {
+        INSTANCE.logger.log(Level.WARNING, warn);
+    }
+
+    public static void logInfo(String info) {
+        INSTANCE.logger.log(Level.INFO, info);
     }
 }
