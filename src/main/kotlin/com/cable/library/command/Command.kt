@@ -134,9 +134,17 @@ interface IAnnotatedCommandExecutor {
 
                     val formatArg: (str: String) -> String = {
                         if (showTypes && it.split("::")[0] != it.split("::")[1]) {
-                            it
+                            if (it.split("::")[1] == "literal") {
+                                "'${it.split("::")[0]}'"
+                            } else {
+                                it
+                            }
                         } else {
-                            it.split("::")[0]
+                            if (it.split("::")[1] == "literal") {
+                                "'${it.split("::")[0]}'"
+                            } else {
+                                it.split("::")[0]
+                            }
                         }
                     }
 
