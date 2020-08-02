@@ -103,4 +103,9 @@ public class ForgeRootCommand extends CommandBase implements RootCommand {
         CableLibs.INSTANCE.getLogger().info(sender.getName() + " issued a command: /" + this.name + " " + String.join(" ", args));
     }
 
+    @Override
+    public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
+        return true;
+    }
+
 }
