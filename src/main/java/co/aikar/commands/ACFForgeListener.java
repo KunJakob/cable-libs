@@ -1,6 +1,7 @@
 package co.aikar.commands;
 
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
@@ -38,7 +39,8 @@ public class ACFForgeListener {
 
     static {
         try {
-            langField = EntityPlayerMP.class.getDeclaredField("field_71148_cg");
+            String field = (Boolean)Launch.blackboard.get("fml.deobfuscatedEnvironment") ? "language" : "field_71148_cg";
+            langField = EntityPlayerMP.class.getDeclaredField(field);
             langField.setAccessible(true);
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
