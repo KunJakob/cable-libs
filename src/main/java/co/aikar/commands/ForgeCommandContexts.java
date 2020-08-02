@@ -105,7 +105,7 @@ public class ForgeCommandContexts extends CommandContexts<ForgeCommandExecutionC
         registerIssuerAwareContext(World.class, (c) -> {
             String firstArg = c.getFirstArg();
             //java.util.Optional<World> world = firstArg != null ? Sponge.getServer().getWorld(firstArg) : java.util.Optional.empty();
-            Optional<WorldServer> world = firstArg != null ? Arrays.stream(FMLCommonHandler.instance().getMinecraftServerInstance().worlds).filter(e -> e.getProviderName().equalsIgnoreCase(firstArg)).findFirst()
+            Optional<WorldServer> world = firstArg != null ? Arrays.stream(FMLCommonHandler.instance().getMinecraftServerInstance().worlds).filter(e -> e.getWorldInfo().getWorldName().equalsIgnoreCase(firstArg)).findFirst()
                     : Optional.empty();
             if (world.isPresent()) {
                 c.popFirstArg();
