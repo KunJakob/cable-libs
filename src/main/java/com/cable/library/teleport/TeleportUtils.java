@@ -25,7 +25,7 @@ public class TeleportUtils {
         int from = player.getServerWorld().provider.getDimension();
 
         if (to == from) {
-            player.moveToBlockPosAndAngles(pos, player.rotationYaw, player.rotationPitch);
+            player.moveToBlockPosAndAngles(pos, yaw, pitch);
         } else {
             player.changeDimension(to, new SimpleTeleporter(pos, yaw, pitch));
         }
