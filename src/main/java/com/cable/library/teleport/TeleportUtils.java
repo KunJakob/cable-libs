@@ -15,9 +15,21 @@ public class TeleportUtils {
         if (to == from) {
             player.moveToBlockPosAndAngles(pos, player.rotationYaw, player.rotationPitch);
         } else {
-            player.changeDimension(to, new SimpleTeleporter(pos));
+            player.changeDimension(to, new SimpleTeleporter(pos, player));
         }
 
+    }
+
+    public static void teleport(EntityPlayerMP player, World world, BlockPos pos, float yaw, float pitch) {
+        int to = world.provider.getDimension();
+        int from = player.getServerWorld().provider.getDimension();
+
+        if (to == from) {
+            player.moveToBlockPosAndAngles(pos, player.rotationYaw, player.rotationPitch);
+        } else {
+            player.changeDimension(to, new SimpleTeleporter(pos, yaw, pitch));
+        }
+        
     }
 
     private static class SimpleTeleporter implements ITeleporter {
