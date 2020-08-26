@@ -10,7 +10,7 @@ public class TeleportUtils {
 
     public static void teleport(EntityPlayerMP player, World world, BlockPos pos) {
         int to = world.provider.getDimension();
-        int from = player.getServerWorld().provider.getDimension();
+        int from = player.dimension;
 
         if (to == from) {
             player.moveToBlockPosAndAngles(pos, player.rotationYaw, player.rotationPitch);
