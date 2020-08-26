@@ -23,14 +23,24 @@ public class TeleportUtils {
     private static class SimpleTeleporter implements ITeleporter {
 
         private BlockPos pos;
+        private float yaw;
+        private float pitch;
 
-        private SimpleTeleporter(BlockPos pos) {
+        private SimpleTeleporter(BlockPos pos, Entity entity) {
             this.pos = pos;
+            this.yaw = entity.rotationYaw;
+            this.pitch = entity.rotationPitch;
+        }
+
+        private SimpleTeleporter(BlockPos pos, float yaw, float pitch) {
+            this.pos = pos;
+            this.yaw = yaw;
+            this.pitch = pitch;
         }
 
         @Override
         public void placeEntity(World world, Entity entity, float yaw) {
-            entity.moveToBlockPosAndAngles(pos, yaw, entity.rotationPitch);
+            entity.moveToBlockPosAndAngles(this.pos, this.yaw, this.pitch);
         }
     }
 }
