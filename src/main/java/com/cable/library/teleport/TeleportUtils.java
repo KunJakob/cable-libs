@@ -32,6 +32,28 @@ public class TeleportUtils {
         
     }
 
+    public static void teleport(EntityPlayerMP player, int dimension, BlockPos pos) {
+        int from = player.getServerWorld().provider.getDimension();
+
+        if (dimension == from) {
+            player.moveToBlockPosAndAngles(pos, player.rotationYaw, player.rotationPitch);
+        } else {
+            player.changeDimension(dimension, new SimpleTeleporter(pos, player));
+        }
+
+    }
+
+    public static void teleport(EntityPlayerMP player, int dimension, BlockPos pos, float yaw, float pitch) {
+        int from = player.getServerWorld().provider.getDimension();
+
+        if (dimension == from) {
+            player.moveToBlockPosAndAngles(pos, yaw, pitch);
+        } else {
+            player.changeDimension(dimension, new SimpleTeleporter(pos, yaw, pitch));
+        }
+        
+    }
+
     private static class SimpleTeleporter implements ITeleporter {
 
         private BlockPos pos;
