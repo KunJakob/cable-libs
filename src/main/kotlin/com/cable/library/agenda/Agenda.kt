@@ -10,4 +10,4 @@ public inline fun <reified T> addAgenda(crossinline action: () -> Unit) {
     }
 }
 
-public fun runAgenda(clazz: Class<*>): Unit? = scheduled[clazz]?.forEach { it.run() }
+public inline fun <reified T> runAgenda(): Unit? = scheduled[T::class.java]?.forEach { it.run() }
