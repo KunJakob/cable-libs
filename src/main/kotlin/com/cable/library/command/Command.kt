@@ -137,7 +137,7 @@ interface IAnnotatedCommandExecutor {
                 } else {
 
                     val formatArg: (str: String) -> String = {
-                        val arg = if (it.contains("::")) it else "$it:$it"
+                        val arg = if (it.contains("::")) it else "$it::$it"
 
                         if (showTypes && arg.split("::")[0] != arg.split("::")[1]) {
                             if (arg.split("::")[1] == "literal") {
