@@ -250,7 +250,8 @@ interface IAnnotatedCommandExecutor {
                 annotation.remainingLabel,
                 annotation.isRemainingOptional,
                 annotation.playerOnly,
-                annotation.consoleOnly)
+                annotation.consoleOnly,
+                "$parentCommand")
     }
 }
 
