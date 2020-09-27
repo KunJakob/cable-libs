@@ -111,7 +111,7 @@ fun String.yellow() = TextComponentString(this).also { it.style.color = TextForm
 fun String.white() = TextComponentString(this).also { it.style.color = TextFormatting.WHITE }
 
 fun String.text() = TextComponentString(this)
-fun String.stripCodes(): String = Text.resolveComponent(this).unformattedText
+fun String.stripCodes(): String = this.replace("[&§][A-Ea-e0-9K-Ok-oRr]".toRegex(), "")
 
 fun ITextComponent.onClick(action: (p: EntityPlayerMP) -> Unit): ITextComponent = onClick(Consumer { action.invoke(it) })
 fun ITextComponent.onClick(action: Consumer<EntityPlayerMP>) = also { it.style.clickEvent = click(action) }
