@@ -42,7 +42,7 @@ interface ICommandExecutor : IAnnotatedCommandExecutor {
     fun getIsPlayerOnly(): Boolean = false
     fun getIsConsoleOnly(): Boolean = false
 
-    override fun toCommand(): ICableCommand = toCommand(
+    override fun toCommand(parentCommand: String = ""): ICableCommand = toCommand(
             getAliases(),
             getNode(),
             getNeededArgs(),
@@ -53,7 +53,8 @@ interface ICommandExecutor : IAnnotatedCommandExecutor {
             getRemainingLabel(),
             getIsRemainingOptional(),
             getIsPlayerOnly(),
-            getIsConsoleOnly()
+            getIsConsoleOnly(),
+            parentCommand
     )
 }
 
@@ -79,20 +80,21 @@ interface IAnnotatedCommandExecutor {
     }
 
     fun toCommand(
-            aliases: Array<String>,
-            node: String,
-            neededArgs: Array<String> = arrayOf(),
-            optionalArgs: Array<String> = arrayOf(),
-            neededMetaData: Array<String> = arrayOf(),
-            optionalMetaData: Array<String> = arrayOf(),
-            showTypes: Boolean = false,
-            remainingLabel: String = "",
-            isRemainingOptional: Boolean = true,
-            playerOnly: Boolean = false,
-            consoleOnly: Boolean = false
+        aliases: Array<String>,
+        node: String,
+        neededArgs: Array<String> = arrayOf(),
+        optionalArgs: Array<String> = arrayOf(),
+        neededMetaData: Array<String> = arrayOf(),
+        optionalMetaData: Array<String> = arrayOf(),
+        showTypes: Boolean = false,
+        remainingLabel: String = "",
+        isRemainingOptional: Boolean = true,
+        playerOnly: Boolean = false,
+        consoleOnly: Boolean = false,
+        parentCommand: String = ""
     ): ICableCommand {
 
-        val subcommands = getSubcommands().map { it.toCommand() }
+        val subcommands = getSubcommands().map { it.toCommand(parentCommand = "$parentCommand${aliases[0]} ") }
 
         return object: ICableCommand {
             override fun getName() = aliases[0]
@@ -101,16 +103,18 @@ interface IAnnotatedCommandExecutor {
 
             override fun getSubcommands(): List<ICableCommand> = subcommands
 
-            override fun getTabCompletions(server: MinecraftServer,
-                                           sender: ICommandSender,
-                                           args: Array<String>,
-                                           targetPos: BlockPos?): MutableList<String> {
+            override fun getTabCompletions(
+                server: MinecraftServer,
+                sender: ICommandSender,
+                args: Array<String>,
+                targetPos: BlockPos?
+            ): MutableList<String> {
                 return subcommands.asSequence().map{it.name}.toMutableList()
             }
 
             override fun getUsage(sender: ICommandSender): String {
 
-                var usage = "/$name"
+                var usage = "/$parentCommand$name"
 
                 if (subcommands.isNotEmpty()) {
                     val usable = subcommands.filter { it.checkPermission(sender.server!!, sender) }
@@ -133,17 +137,19 @@ interface IAnnotatedCommandExecutor {
                 } else {
 
                     val formatArg: (str: String) -> String = {
-                        if (showTypes && it.split("::")[0] != it.split("::")[1]) {
-                            if (it.split("::")[1] == "literal") {
-                                "'${it.split("::")[0]}'"
+                        val arg = if (it.contains("::")) it else "$it:$it"
+
+                        if (showTypes && arg.split("::")[0] != arg.split("::")[1]) {
+                            if (arg.split("::")[1] == "literal") {
+                                "'${arg.split("::")[0]}'"
                             } else {
-                                it
+                                arg
                             }
                         } else {
-                            if (it.split("::")[1] == "literal") {
-                                "'${it.split("::")[0]}'"
+                            if (arg.split("::")[1] == "literal") {
+                                "'${arg.split("::")[0]}'"
                             } else {
-                                it.split("::")[0]
+                                arg.split("::")[0]
                             }
                         }
                     }
@@ -232,7 +238,7 @@ interface IAnnotatedCommandExecutor {
         }
     }
 
-    fun toCommand(): ICableCommand {
+    fun toCommand(parentCommand: String = ""): ICableCommand {
         val annotation = javaClass.getAnnotation(Command::class.java);
         return toCommand(annotation.aliases,
                 annotation.node,
