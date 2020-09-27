@@ -42,7 +42,7 @@ interface ICommandExecutor : IAnnotatedCommandExecutor {
     fun getIsPlayerOnly(): Boolean = false
     fun getIsConsoleOnly(): Boolean = false
 
-    override fun toCommand(parentCommand: String = ""): ICableCommand = toCommand(
+    override fun toCommand(parentCommand: String): ICableCommand = toCommand(
             getAliases(),
             getNode(),
             getNeededArgs(),
