@@ -333,6 +333,7 @@ class Parameters {
                         }
                     } catch (e: NumberFormatException) {
                         sender.sendMessage("Invalid price: $arg. A price must be a number.".red())
+                        null
                     }
                 },
                 "yes/no" to ParameterResolver { sender, arg, _ ->
@@ -473,6 +474,7 @@ class Parameters {
             sender.sendMessage("Missing argument: $remainingLabel".red())
         }
 
+        remaining = remaining.trim()
     }
 
     fun <T> getNeeded(arg: String): T {
