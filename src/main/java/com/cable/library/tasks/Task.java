@@ -106,6 +106,13 @@ public class Task {
 	}
 
 	/**
+	 * Change the tick remaining.
+	 */
+	public void setTicksRemaining(long ticksRemaining) {
+		this.ticksRemaining = ticksRemaining;
+	}
+
+	/**
 	 * Decrements the number of ticks remaining and evaluates if the task should run.
 	 */
 	void tick() {
