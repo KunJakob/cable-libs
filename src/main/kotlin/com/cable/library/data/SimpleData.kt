@@ -9,6 +9,7 @@ import java.io.File
 import java.io.FileReader
 import java.io.IOException
 import java.io.PrintWriter
+import java.util.HashMap
 import java.util.UUID
 
 public abstract class SimpleData {
@@ -110,6 +111,7 @@ public val simpleDataCache: HashMap<Class<*>, HashMap<String, SimpleData>> = has
 
 public inline fun <reified T : SimpleData> getSimpleData(uuid: UUID): T = getSimpleData(uuid.toString())
 
+public inline fun <reified T : SimpleData> getSimpleData(): T = getSimpleData<T>("")
 public inline fun <reified T : SimpleData> getSimpleData(name: String): T {
     val existing = simpleDataCache[T::class.java]?.get(name) as? T
     if (existing != null) {
@@ -119,17 +121,13 @@ public inline fun <reified T : SimpleData> getSimpleData(name: String): T {
     val empty = T::class.java.newInstance().also { it.name = name }
     val loaded = empty.load(T::class.java)?.also { it.name = name }
 
-    if (loaded != null) {
-        return loaded
-    } else {
-        if (empty.shouldCache()) {
-            val cacheMap = simpleDataCache[empty::class.java]
-                    ?: hashMapOf<String, SimpleData>().also { simpleDataCache[empty::class.java] = it }
-
-            cacheMap[name] = empty
-        }
-        return empty
+    val data = loaded ?: empty
+    if (data.shouldCache()) {
+        val cacheMap = simpleDataCache[data::class.java]
+            ?: hashMapOf<String, SimpleData>().also { simpleDataCache[data::class.java] = it }
+        cacheMap[name] = data
     }
+    return data
 }
 
 public inline fun <reified T : SimpleData> deleteSimpleData(uuid: UUID): Unit = deleteSimpleData<T>(uuid.toString())
@@ -138,6 +136,8 @@ public inline fun <reified T : SimpleData> deleteSimpleData(name: String): Unit 
         .newInstance()
         .also { it.name = name }
         .delete()
+
+public inline fun <reified T : SimpleData> deleteSimpleData(): Unit = deleteSimpleData<T>("")
 
 public inline fun <reified T : SimpleData> EntityPlayerMP.getData(): T = getSimpleData(uniqueID)
 
