@@ -12,7 +12,6 @@ import net.minecraft.util.math.BlockPos
 import net.minecraftforge.fml.common.FMLCommonHandler
 import java.lang.IllegalStateException
 import java.util.*
-import kotlin.collections.ArrayList
 
 @Target(AnnotationTarget.CLASS)
 annotation class Command(
@@ -240,18 +239,20 @@ interface IAnnotatedCommandExecutor {
 
     fun toCommand(parentCommand: String = ""): ICableCommand {
         val annotation = javaClass.getAnnotation(Command::class.java);
-        return toCommand(annotation.aliases,
-                annotation.node,
-                annotation.neededArgs,
-                annotation.optionalArgs,
-                annotation.neededMetaData,
-                annotation.optionalMetaData,
-                annotation.showTypes,
-                annotation.remainingLabel,
-                annotation.isRemainingOptional,
-                annotation.playerOnly,
-                annotation.consoleOnly,
-                "$parentCommand")
+        return toCommand(
+            annotation.aliases,
+            annotation.node,
+            annotation.neededArgs,
+            annotation.optionalArgs,
+            annotation.neededMetaData,
+            annotation.optionalMetaData,
+            annotation.showTypes,
+            annotation.remainingLabel,
+            annotation.isRemainingOptional,
+            annotation.playerOnly,
+            annotation.consoleOnly,
+            parentCommand
+        )
     }
 }
 
@@ -272,28 +273,22 @@ class Parameters {
     public companion object {
         public val resolvers: HashMap<String, ParameterResolver> = hashMapOf(
                 "player" to ParameterResolver { sender, arg, _ ->
-                    val player = FMLCommonHandler.instance().minecraftServerInstance.playerList.getPlayerByUsername(arg)
-                    if (player != null) {
-                        player
-                    } else {
-                        sender.sendMessage("There is no player online named $arg.".red())
-                        null
-                    }
+                    FMLCommonHandler.instance().minecraftServerInstance.playerList.getPlayerByUsername(arg)
+                        ?: throw IllegalArgumentException("There is no player online named $arg.")
                 },
                 "user" to ParameterResolver { sender, arg, _ ->
                     try {
                         FMLCommonHandler.instance().minecraftServerInstance.playerProfileCache.getProfileByUUID(UUID.fromString(arg))
-                                ?: sender.sendMessage("No known user with UUID: $arg".red())
+                                ?: throw IllegalArgumentException("No known user with UUID: $arg")
                     } catch (e: Exception) {
                         val lower = arg.toLowerCase()
                         val matched = FMLCommonHandler.instance().minecraftServerInstance.playerProfileCache
                                 .usernames.find { it.toLowerCase() == lower }
                         if (matched == null) {
-                            sender.sendMessage("Invalid user: $arg".red())
-                            null
+                            throw IllegalArgumentException("Invalid user: $arg")
                         } else {
                             FMLCommonHandler.instance().minecraftServerInstance.playerProfileCache
-                                    .getGameProfileForUsername(lower)
+                                    .getGameProfileForUsername(arg)
                         }
                     }
                 },
@@ -301,8 +296,7 @@ class Parameters {
                     try {
                         UUID.fromString(arg)
                     } catch (e: Exception) {
-                        sender.sendMessage("Invalid UUID: $arg".red())
-                        null
+                        throw IllegalArgumentException("Invalid UUID: $arg")
                     }
                 },
                 "text" to ParameterResolver { _, arg, _ -> arg },
@@ -310,30 +304,26 @@ class Parameters {
                     try {
                         arg.toInt()
                     } catch (e: NumberFormatException) {
-                        sender.sendMessage("Invalid number: $arg.".red())
-                        null
+                        throw IllegalArgumentException("Invalid number: $arg.")
                     }
                 },
                 "decimal" to ParameterResolver { sender, arg, _ ->
                     try {
                         arg.toDouble()
                     } catch (e: NumberFormatException) {
-                        sender.sendMessage("Invalid decimal: $arg. A decimal must be a valid number".red())
-                        null
+                        throw IllegalArgumentException("Invalid decimal: $arg. A decimal must be a valid number")
                     }
                 },
                 "price" to ParameterResolver { sender, arg, _ ->
                     try {
                         val price = arg.toInt()
                         if (price < 0) {
-                            sender.sendMessage("Invalid price: $arg. A price cannot be negative.".red())
-                            null
+                            throw  IllegalArgumentException("Invalid price: $arg. A price cannot be negative.")
                         } else {
                             price
                         }
                     } catch (e: NumberFormatException) {
-                        sender.sendMessage("Invalid price: $arg. A price must be a number.".red())
-                        null
+                        throw IllegalArgumentException("Invalid price: $arg. A price must be a number.")
                     }
                 },
                 "yes/no" to ParameterResolver { sender, arg, _ ->
@@ -342,20 +332,13 @@ class Parameters {
                     } else if (arg.toLowerCase() in arrayOf("no", "nope", "nah", "false", "negative")) {
                         false
                     } else {
-                        sender.sendMessage("Invalid yes/no: $arg.".red())
-                        null
+                        throw IllegalArgumentException("Invalid yes/no: $arg.")
                     }
                 },
                 "world" to ParameterResolver { sender, arg, _ ->
-                    val world = FMLCommonHandler.instance().minecraftServerInstance.worlds
-                            .find { it.worldInfo.worldName == arg || it.provider.dimension.toString() == arg }
-
-                    if (world != null) {
-                        world
-                    } else {
-                        sender.sendMessage("Invalid world: $arg.".red())
-                        null
-                    }
+                    FMLCommonHandler.instance().minecraftServerInstance.worlds
+                        .find { it.worldInfo.worldName == arg || it.provider.dimension.toString() == arg }
+                        ?: throw IllegalArgumentException("Invalid world: $arg.")
                 },
                 "literal" to ParameterResolver { _, arg, parameterName -> arg.equals(parameterName, ignoreCase = true) }
         )
@@ -365,12 +348,12 @@ class Parameters {
     fun <T> getOptionalMetaData(name: String, orElse: T): T = metaData[name.toLowerCase()] as? T ?: orElse
 
     constructor(
-            sender: ICommandSender,
-            given: ArrayList<String>,
-            needed: ArrayList<String>,
-            optional: ArrayList<String>,
-            remainingLabel: String,
-            isRemainingOptional: Boolean
+        sender: ICommandSender,
+        given: ArrayList<String>,
+        needed: ArrayList<String>,
+        optional: ArrayList<String>,
+        remainingLabel: String,
+        isRemainingOptional: Boolean
     ) {
 
         val totalArgs = needed.plus(optional)
@@ -419,8 +402,9 @@ class Parameters {
                     val triedValue = arg.substringAfter(":")
                     val array = optional.plus(needed)
                     val resolvedKey = tryResolveNamed(sender, array, triedKey, triedValue)
-                    if (!succeeded)
+                    if (!succeeded) {
                         return
+                    }
                     if (resolvedKey != null) {
                         needed.remove(resolvedKey)
                         optional.remove(resolvedKey)
@@ -440,13 +424,19 @@ class Parameters {
                 return
             } else {
                 val resolver = resolvers[neededArg.substringAfter("::").toLowerCase()]!!
-                val parsed = resolver.resolve(sender, given.removeAt(0), neededArg.substringBefore("::"))
-                if (parsed == null) {
+                try {
+                    val parsed = resolver.resolve(sender, given.removeAt(0), neededArg.substringBefore("::"))
+                    if (parsed == null) {
+                        succeeded = false
+                        return
+                    }
+
+                    params[neededArg.split("::")[0].toLowerCase()] = parsed
+                } catch (e: IllegalArgumentException) {
+                    sender.sendMessage((e.message ?: "Invalid argument for: ${neededArg.substringBefore("::")}").red())
                     succeeded = false
                     return
                 }
-
-                params[neededArg.split("::")[0].toLowerCase()] = parsed
             }
         }
 
@@ -455,9 +445,15 @@ class Parameters {
                 break
             } else {
                 val resolver = resolvers[optionalArg.substringAfter("::")]!!
-                val parsed = resolver.resolve(sender, given.removeAt(0), optionalArg.substringBefore("::"))
-                if (parsed != null) {
-                    params[optionalArg.split("::")[0].toLowerCase()] = parsed
+                try {
+                    val parsed = resolver.resolve(sender, given.removeAt(0), optionalArg.substringBefore("::"))
+                    if (parsed != null) {
+                        params[optionalArg.split("::")[0].toLowerCase()] = parsed
+                    }
+                } catch (e: IllegalArgumentException) {
+                    sender.sendMessage((e.message ?: "Invalid argument for: ${optionalArg.substringBefore("::")}").red())
+                    succeeded = false
+                    return
                 }
             }
         }
@@ -497,26 +493,17 @@ class Parameters {
             val parameterType = it.split("::")[1]
             if (parameterName == key.toLowerCase()) {
                 val resolver = resolvers[parameterType]!!
-                val resolved = resolver.resolve(sender, value, parameterName)
-                if (resolved != null) {
-                    params[parameterName] = resolved
-                    return it
-                } else {
-                    succeeded = false
-                }
-            }
-        }
 
-        0.until(arr.size).forEach {
-            if (arr[it].split("::")[0].toLowerCase() == key.toLowerCase()) {
-                val resolver = resolvers[arr[it].split("::")[1]]!!
-                val resolved = resolver.resolve(sender, value, key)
-                if (resolved != null) {
-                    params[key.toLowerCase()] = resolved
-                    return arr[it]
-                } else {
-                    succeeded = false
+                try {
+                    val resolved = resolver.resolve(sender, value, parameterName)
+                    if (resolved != null) {
+                        params[parameterName] = resolved
+                        return it
+                    }
+                } catch (e: IllegalArgumentException) {
+                    sender.sendMessage((e.message ?: "Invalid argument for: $parameterName").red())
                 }
+                succeeded = false
             }
         }
 
