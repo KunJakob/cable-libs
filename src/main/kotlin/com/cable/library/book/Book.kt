@@ -11,6 +11,10 @@ import net.minecraft.util.EnumHand
 import net.minecraft.util.text.ITextComponent
 
 fun of(vararg pages: ITextComponent): Book {
+    return book(*pages)
+}
+
+fun book(vararg pages: ITextComponent): Book {
     val book = ItemStack(Items.WRITTEN_BOOK, 1)
     val nbt = NBTTagCompound()
     val pagesNBT = NBTTagList()

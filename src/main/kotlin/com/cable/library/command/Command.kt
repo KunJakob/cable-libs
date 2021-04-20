@@ -185,7 +185,7 @@ interface IAnnotatedCommandExecutor {
                 val optional = ArrayList<String>(optionalArgs.toList().map{if (!it.contains("::")) "$it::$it" else it})
 
                 if (args.isNotEmpty()) {
-                    val subcommand = subcommands.find{ it.aliases.asSequence().plus(it.name).map{ s -> s.toLowerCase() }.contains(args[0].toLowerCase())}
+                    val subcommand = subcommands.find { it.aliases.asSequence().plus(it.name).map { s -> s.toLowerCase() }.contains(args[0].toLowerCase())}
                     if (subcommand != null) {
                         if (subcommand.checkPermission(server, sender)) {
                             subcommand.execute(server, sender, args.copyOfRange(1, args.size))
@@ -207,7 +207,33 @@ interface IAnnotatedCommandExecutor {
                     return sender.sendMessage("Only the console can use this command.".red())
                 }
 
-                val given = ArrayList<String>(args.toList())
+                val joinedGiven = mutableListOf<String>()
+                var buildingString: String? = null
+                args.forEach { arg ->
+                    if (arg.endsWith("\"")) {
+                        if (buildingString == null) {
+                            return sender.sendMessage("Invalid arguments. Unexpected closing \"".red())
+                        } else {
+                            buildingString += if (arg.length == 1) "" else (" " + arg.substringBeforeLast("\""))
+                            joinedGiven.add(buildingString!!)
+                            buildingString = null
+                        }
+                    } else if (arg.startsWith("\"")) {
+                        if (buildingString == null) {
+                            buildingString = if (arg.length == 1) "" else arg.substring(1)
+                        } else {
+                            return sender.sendMessage("Invalid arguments. Unexpected opening \"".red())
+                        }
+                    } else {
+                        if (buildingString == null) {
+                            joinedGiven.add(arg)
+                        } else {
+                            buildingString += " $arg"
+                        }
+                    }
+                }
+
+                val given = ArrayList<String>(joinedGiven)
 
                 val params = Parameters(sender, given, needed, optional, remainingLabel, isRemainingOptional)
 
