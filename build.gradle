@@ -23,7 +23,7 @@ apply plugin: 'maven'
 group = 'com.gitlab.cable-mc'
 apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: "kotlin"
-version = '1.1.5'
+version = '1.1.6'
 archivesBaseName = 'cable-libs'
 
 minecraft {
@@ -74,6 +74,19 @@ dependencies {
     compile 'com.google.inject.extensions:guice-assistedinject:4.1.0'
     compile 'com.google.guava:guava:21.0'
 }
+
+// Testing ---------------
+test {
+    useJUnitPlatform()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.2'
+    testImplementation 'org.mockito:mockito-core:3.3.3'
+    testImplementation 'io.mockk:mockk:1.9.3'
+}
+// -----------------------
 
 shadowJar {
     classifier = null
