@@ -67,7 +67,8 @@ class Text internal constructor() {
     private fun getBlankStyle() = Style().setBold(false).setItalic(false).setUnderlined(false).setObfuscated(false).setColor(TextFormatting.WHITE).setClickEvent(null).setHoverEvent(null)
 }
 
-fun of(vararg components: Any) = Text().parse(*components)
+fun of(vararg components: Any) = text(*components)
+fun text(vararg components: Any) = Text().parse(*components)
 
 val handlers = hashMapOf<UUID, Consumer<EntityPlayerMP>>()
 
@@ -93,24 +94,24 @@ val UNDERLINED = Object()
 val OBFUSCATED = Object()
 val RESET = Object()
 
-fun String.red() = TextComponentString(this).also { it.style.color = TextFormatting.RED }
-fun String.black() = TextComponentString(this).also { it.style.color = TextFormatting.BLACK }
-fun String.darkBlue() = TextComponentString(this).also { it.style.color = TextFormatting.DARK_BLUE }
-fun String.darkGreen() = TextComponentString(this).also { it.style.color = TextFormatting.DARK_GREEN }
-fun String.darkAqua() = TextComponentString(this).also { it.style.color = TextFormatting.DARK_AQUA }
-fun String.darkRed() = TextComponentString(this).also { it.style.color = TextFormatting.DARK_RED }
-fun String.darkPurple() = TextComponentString(this).also { it.style.color = TextFormatting.DARK_PURPLE }
-fun String.gold() = TextComponentString(this).also { it.style.color = TextFormatting.GOLD }
-fun String.gray() = TextComponentString(this).also { it.style.color = TextFormatting.GRAY }
-fun String.darkGray() = TextComponentString(this).also { it.style.color = TextFormatting.DARK_GRAY }
-fun String.blue() = TextComponentString(this).also { it.style.color = TextFormatting.BLUE }
-fun String.green() = TextComponentString(this).also { it.style.color = TextFormatting.GREEN }
-fun String.aqua() = TextComponentString(this).also { it.style.color = TextFormatting.AQUA }
-fun String.lightPurple() = TextComponentString(this).also { it.style.color = TextFormatting.LIGHT_PURPLE }
-fun String.yellow() = TextComponentString(this).also { it.style.color = TextFormatting.YELLOW }
-fun String.white() = TextComponentString(this).also { it.style.color = TextFormatting.WHITE }
+fun String.red() = of(this).also { it.style.color = TextFormatting.RED }
+fun String.black() = of(this).also { it.style.color = TextFormatting.BLACK }
+fun String.darkBlue() = of(this).also { it.style.color = TextFormatting.DARK_BLUE }
+fun String.darkGreen() = of(this).also { it.style.color = TextFormatting.DARK_GREEN }
+fun String.darkAqua() = of(this).also { it.style.color = TextFormatting.DARK_AQUA }
+fun String.darkRed() = of(this).also { it.style.color = TextFormatting.DARK_RED }
+fun String.darkPurple() = of(this).also { it.style.color = TextFormatting.DARK_PURPLE }
+fun String.gold() = of(this).also { it.style.color = TextFormatting.GOLD }
+fun String.gray() = of(this).also { it.style.color = TextFormatting.GRAY }
+fun String.darkGray() = of(this).also { it.style.color = TextFormatting.DARK_GRAY }
+fun String.blue() = of(this).also { it.style.color = TextFormatting.BLUE }
+fun String.green() = of(this).also { it.style.color = TextFormatting.GREEN }
+fun String.aqua() = of(this).also { it.style.color = TextFormatting.AQUA }
+fun String.lightPurple() = of(this).also { it.style.color = TextFormatting.LIGHT_PURPLE }
+fun String.yellow() = of(this).also { it.style.color = TextFormatting.YELLOW }
+fun String.white() = of(this).also { it.style.color = TextFormatting.WHITE }
 
-fun String.text() = TextComponentString(this)
+fun String.text() = of(this)
 fun String.stripCodes(): String = this.replace("[&§][A-Ea-e0-9K-Ok-oRr]".toRegex(), "")
 
 fun ITextComponent.onClick(action: (p: EntityPlayerMP) -> Unit): ITextComponent = onClick(Consumer { action.invoke(it) })
