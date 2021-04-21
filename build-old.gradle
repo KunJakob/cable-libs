@@ -1,32 +1,34 @@
-buildscript {
+﻿buildscript {
     ext.kotlin_version = '1.3.72'
     repositories {
-        maven { url = 'https://files.minecraftforge.net/maven' }
         jcenter()
         mavenCentral()
+        maven {
+            name = "forge"
+            url = "https://maven.minecraftforge.net"
+        }
     }
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+//        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
-plugins {
-    id 'com.github.johnrengelman.shadow' version '4.0.4'
-}
+//plugins {
+//    id 'com.github.johnrengelman.shadow' version '4.0.4'
+//}
 
-apply plugin: 'net.minecraftforge.gradle'
-// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+
+apply plugin: 'maven'
+apply plugin: 'com.github.johnrengelman.shadow' version '4.0.4'
+apply plugin: "net.minecraftforge.gradle"
 apply plugin: "kotlin"
 
 group = 'com.gitlab.cable-mc'
 version = '1.1.6'
 archivesBaseName = 'cable-libs'
 
-sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
-
 minecraft {
-    mappings channel: 'snapshot', version: '20171003-1.12'
     runs {
         client {
             workingDirectory project.file('run')
@@ -49,7 +51,11 @@ minecraft {
     }
 }
 
+
 repositories {
+    maven { url = 'https://libraries.minecraft.net/' }
+    mavenCentral()
+    maven { url = 'https://maven.minecraftforge.net/' }
     maven {
         url 'http://oss.sonatype.org/content/repositories/snapshots'
     }
@@ -71,8 +77,6 @@ repositories {
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2854'
-
-    // You may put jars on which you depend on in ./libs or you may define them like so..
     compile group: "org.jetbrains.kotlin", name: "kotlin-stdlib", version: kotlin_version
     compile group: "org.jetbrains.kotlin", name: "kotlin-stdlib-jdk7", version: kotlin_version
     compile group: "org.jetbrains.kotlin", name: "kotlin-stdlib-jdk8", version: kotlin_version
@@ -84,19 +88,6 @@ dependencies {
     compile 'com.google.inject:guice:4.1.0'
     compile 'com.google.inject.extensions:guice-assistedinject:4.1.0'
     compile 'com.google.guava:guava:21.0'
-    // compile "some.group:artifact:version:classifier"
-    // compile "some.group:artifact:version"
-
-    // The 'provided' configuration is for optional dependencies that exist at compile-time but might not at runtime.
-    // provided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-
-    // These dependencies get remapped to your current MCP mappings
-    // deobf 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-
-    // For more info...
-    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
-    // http://www.gradle.org/docs/current/userguide/dependency_management.html
-
 }
 
 // Testing ---------------
@@ -111,15 +102,6 @@ dependencies {
     testImplementation 'io.mockk:mockk:1.9.3'
 }
 // -----------------------
-
-// Example for how to get properties into the manifest for reading by the runtime..
-jar {
-    manifest {
-        attributes([
-                "Specification-Version": "1", // We are version 1 of ourselves
-        ])
-    }
-}
 
 shadowJar {
     classifier = null
@@ -147,16 +129,37 @@ shadowJar {
 
 }
 
+//reobf {
+//    shadowJar {
+////        mappingType = 'SEARGE'
+//    }
+//}
+
+
 kotlinSourcesJar {
     from(sourceSets.main.kotlin.srcDirs)
 }
 
-// Example configuration to allow publishing using the maven-publish task
-// This is the preferred method to reobfuscate your jar file
-jar.finalizedBy('reobfShadowJar')
-// However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing
-//publish.dependsOn('reobfJar')
+processResources {
+    // this will ensure that this task is redone when the versions change.
+//    inputs.property "version", project.version
+//    inputs.property "mcversion", project.minecraft.version
 
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include "mcmod.info"
+
+        // replace version and mcversion
+//        expand "version": project.version, "mcversion": project.minecraft.version
+    }
+
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude "mcmod.info"
+    }
+}
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 compileKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
@@ -168,14 +171,11 @@ tasks.withType(JavaCompile) { task ->
     task.options.fork = true
 }
 
-reobf {
-    shadowJar {
-    }
-}
 
 tasks.build.dependsOn kotlinSourcesJar
 tasks.build.dependsOn shadowJar
 tasks.build.dependsOn reobfShadowJar
+
 
 compileJava {
     options.compilerArgs += ["-parameters"]
